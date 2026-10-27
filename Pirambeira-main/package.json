@@ -1,0 +1,17 @@
+{
+  "name": "pirambeira",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @pirambeira/servidor\" \"npm run dev --workspace @pirambeira/web\"",
+    "build": "npm run build --workspace @pirambeira/web",
+    "start": "npm run start --workspace @pirambeira/servidor"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
