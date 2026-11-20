@@ -1,29 +1,41 @@
-# Módulo principal do servidor
+import express from 'express';
+import cors from 'cors';
+import http from 'node:http';
+import { Server } from 'socket.io';
+import { ambiente } from './configuracoes/ambiente.js';
+import { iniciarBanco } from './banco/conexao.js';
+import autenticacaoRotas from './rotas/autenticacao.rotas.js';
+import personagensRotas from './rotas/personagens.rotas.js';
+import salasRotas from './rotas/salas.rotas.js';
+import partidaRotas from './rotas/partida.rotas.js';
 
-## Responsável: Dev 1
+await iniciarBanco();
 
-## O que esse arquivo deve conter
+const app = express();
+app.use(cors({ origin: ambiente.URL_CLIENTE }));
+app.use(express.json({ limit: '100kb' }));
 
-- Inicialização do Express.
-- Configuração do servidor HTTP.
-- Criação do Socket.IO.
-- Registro das rotas e dos eventos de jogo.
-- Porta e carregamento das variáveis de ambiente.
+app.get('/api/saude', (_req, res) => res.json({ ok: true }));
+app.use('/api/auth', autenticacaoRotas);
+app.use('/api/personagens', personagensRotas);
+app.use('/api/salas', salasRotas);
+app.use('/api/partida', partidaRotas);
 
-## Conexão com o projeto
+app.use((_req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
-É o ponto central do backend. Ele coordena HTTP, WebSocket, autenticação e regras do jogo.
+// eslint-disable-next-line no-unused-vars
+app.use((erro, _req, res, _next) => {
+  if (erro.type === 'entity.parse.failed') return res.status(400).json({ erro: 'JSON inválido.' });
+  const status = erro.status || 500;
+  if (status === 500) console.error('[erro]', erro);
+  res.status(status).json({ erro: status === 500 ? 'Erro interno do servidor.' : erro.message });
+});
 
-## Planejamento por semanas
+const servidor = http.createServer(app);
+const io = new Server(servidor, { cors: { origin: ambiente.URL_CLIENTE } });
+// TODO (Dev 2): registrar aqui os eventos -> registrarWebsocket(io)
+// Para autenticar o socket, usar verificarToken() de seguranca/tokens.js no handshake.
 
-### Semana 1
-- Criar base do servidor.
-
-### Semana 2
-- Conectar autenticação e salas.
-
-### Semana 3
-- Inserir regras do jogo e eventos de turno.
-
-### Semana 4+
-- Ajustar integrações com IA e produção.
+servidor.listen(ambiente.PORTA, () => {
+  console.log(`[servidor] http://localhost:${ambiente.PORTA}`);
+});

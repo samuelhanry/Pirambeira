@@ -1,24 +1,38 @@
-# Conexão com o banco
+import sqlite3 from 'sqlite3';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { ambiente } from '../configuracoes/ambiente.js';
 
-## Responsável: Dev 1
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const RAIZ_SERVIDOR = path.resolve(__dirname, '../..'); // apps/servidor
+const caminhoBanco = path.resolve(RAIZ_SERVIDOR, ambiente.DB_ARQUIVO);
 
-## O que esse arquivo deve conter
+fs.mkdirSync(path.dirname(caminhoBanco), { recursive: true });
+const db = new sqlite3.Database(caminhoBanco);
 
-- Conexão com SQLite em dev.
-- Conexão com PostgreSQL em produção.
-- Funções utilitárias para consultas e transações.
+export const run = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.run(sql, params, function (erro) {
+      if (erro) return reject(erro);
+      resolve({ lastID: this.lastID, changes: this.changes });
+    });
+  });
 
-## Conexão com o projeto
+export const get = (sql, params = []) =>
+  new Promise((resolve, reject) =>
+    db.get(sql, params, (erro, linha) => (erro ? reject(erro) : resolve(linha))));
 
-Ele conecta todas as rotas e serviços ao banco de dados central do jogo.
+export const all = (sql, params = []) =>
+  new Promise((resolve, reject) =>
+    db.all(sql, params, (erro, linhas) => (erro ? reject(erro) : resolve(linhas))));
 
-## Planejamento por semanas
+const exec = (sql) =>
+  new Promise((resolve, reject) => db.exec(sql, (erro) => (erro ? reject(erro) : resolve())));
 
-### Semana 1
-- Criar conexão básica.
-
-### Semana 2
-- Testar login e criação de personagem.
-
-### Semana 3+
-- Garantir operações de partida, inventário e salas.
+/** Ativa FKs e aplica o esquema.sql (idempotente). Chamar uma vez no boot. */
+export async function iniciarBanco() {
+  await run('PRAGMA foreign_keys = ON');
+  await exec(fs.readFileSync(path.join(__dirname, 'esquema.sql'), 'utf8'));
+  console.log(`[banco] SQLite pronto em ${caminhoBanco}`);
+}
