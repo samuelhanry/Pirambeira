@@ -1,21 +1,6 @@
-# Segurança de senha
+import bcrypt from 'bcryptjs';
 
-## Responsável: Dev 1
+const RODADAS = 10;
 
-## O que esse arquivo deve conter
-
-- Hash com bcrypt.
-- Validação da senha no login.
-- Mensagens de erro padronizadas.
-
-## Conexão com o projeto
-
-Protege a autenticação e garante que senhas não fiquem salvas em texto puro.
-
-## Planejamento por semanas
-
-### Semana 1
-- Implementar hash e comparação.
-
-### Semana 2
-- Validar registro e login.
+export const gerarHash = (senha) => bcrypt.hash(senha, RODADAS);
+export const conferirSenha = (senha, hash) => bcrypt.compare(senha, hash);

@@ -1,21 +1,18 @@
-# Tokens e sessão
+import jwt from 'jsonwebtoken';
+import { ambiente } from '../configuracoes/ambiente.js';
 
-## Responsável: Dev 1
+export function criarToken(usuario) {
+  return jwt.sign({ sub: usuario.id, nome: usuario.nome_usuario }, ambiente.JWT_SECRET, {
+    expiresIn: ambiente.JWT_EXPIRA_EM,
+  });
+}
 
-## O que esse arquivo deve conter
-
-- Criação do JWT.
-- Validação do token.
-- Expiração e payload do usuário.
-
-## Conexão com o projeto
-
-Esse módulo estabelece a sessão do jogador e permite entrar em áreas protegidas do sistema.
-
-## Planejamento por semanas
-
-### Semana 1
-- Criar login com token.
-
-### Semana 2
-- Ajustar tempo de expiração e payload.
+/** Retorna { id, nome_usuario } ou null se inválido/expirado. Útil também para o handshake do Socket.IO. */
+export function verificarToken(token) {
+  try {
+    const payload = jwt.verify(token, ambiente.JWT_SECRET);
+    return { id: payload.sub, nome_usuario: payload.nome };
+  } catch {
+    return null;
+  }
+}
