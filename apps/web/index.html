@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pirambeira — RPG Multiplayer</title>
+  <link rel="stylesheet" href="./src/hud.css" />
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+  <!-- Tela de Acesso / Lobby (Modal Inicial) -->
+  <div id="lobby-overlay" class="lobby-overlay">
+    <div class="lobby-card">
+      <h1>Pirambeira RPG</h1>
+      <p id="lobby-status" class="lobby-status">Entre ou crie uma conta para jogar</p>
+
+      <!-- Etapa 1: Login / Registro -->
+      <div id="step-auth" class="lobby-step">
+        <input type="text" id="auth-user" placeholder="Usuário (3 a 20 caracteres, sem espaços)" />
+        <input type="password" id="auth-pass" placeholder="Senha (mínimo 8 caracteres)" />
+        <div class="lobby-actions">
+          <button type="button" id="btn-login">Entrar</button>
+          <button type="button" id="btn-register" class="btn-secondary">Criar Conta</button>
+        </div>
+      </div>
+
+      <!-- Etapa 2: Selecionar ou Criar Personagem -->
+      <div id="step-character" class="lobby-step hidden">
+        <h3>Seus Personagens</h3>
+        <select id="select-personagem"></select>
+        <button type="button" id="btn-usar-personagem">Continuar com este Personagem</button>
+
+        <hr />
+        <h4>Ou crie um novo personagem</h4>
+        <input type="text" id="char-input-nome" placeholder="Nome do personagem" />
+        <select id="char-input-classe">
+          <option value="guerreiro">Guerreiro (FOR 8, DES 6, INT 6)</option>
+          <option value="ladino">Ladino (FOR 5, DES 8, INT 7)</option>
+          <option value="mago">Mago (FOR 4, DES 6, INT 10)</option>
+        </select>
+        <textarea id="char-input-desc" rows="2" placeholder="Descrição visual (mínimo 10 caracteres)..."></textarea>
+        <button type="button" id="btn-criar-personagem" class="btn-secondary">Criar Personagem</button>
+      </div>
+
+      <!-- Etapa 3: Criar ou Entrar em Sala -->
+      <div id="step-room" class="lobby-step hidden">
+        <h3>Entrar em uma Sala Existente</h3>
+        <select id="select-salas-abertas"></select>
+        <input type="text" id="room-input-codigo" placeholder="Ou digite o código da sala (ex: SC5TBF)" />
+        <button type="button" id="btn-entrar-sala">Entrar na Sala</button>
+
+        <hr />
+        <h4>Ou crie uma nova aventura (Host)</h4>
+        <input type="text" id="room-input-nome" placeholder="Nome da sala (ex: Ruínas de Sabará)" />
+        <input type="text" id="room-input-tema" placeholder="Tema (ex: Sci-Fi distópico com folclore mineiro)" />
+        <button type="button" id="btn-criar-sala" class="btn-secondary">Criar e Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tela Principal do Jogo -->
+  <div class="app-wrapper">
+    <header class="player-hud" id="player-hud">
+      <div class="hud-player-info">
+        <img id="hud-avatar" src="https://via.placeholder.com/48" alt="Avatar" class="hud-avatar" />
+        <div class="hud-vitals">
+          <div class="hud-name-row">
+            <strong id="hud-name">Carregando...</strong>
+            <span class="hud-badge" id="hud-class-level">Classe • Nv. 1</span>
+          </div>
+          <div class="hud-hp-wrapper">
+            <div class="hud-hp-bar">
+              <div class="hud-hp-fill" id="hud-hp-fill" style="width: 100%;"></div>
+            </div>
+            <span class="hud-hp-text" id="hud-hp-text">20 / 20 HP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-world-info">
+        <div class="hud-location">
+          <span class="hud-label">LOCAL ATUAL</span>
+          <strong id="hud-map-name">Aguardando sala...</strong>
+        </div>
+        <div class="hud-status-tags">
+          <span id="hud-combat-state" class="tag-mode mode-explore">🧭 Exploração</span>
+          <span id="hud-turn-indicator" class="tag-effect">Turno: —</span>
+        </div>
+      </div>
+
+      <div class="hud-session-info">
+        <button type="button" id="btn-iniciar-partida" class="btn-start-match">Iniciar Partida</button>
+        <div class="hud-room-code" title="Código da sala">
+          Sala: <strong id="hud-room-id">#---</strong>
+        </div>
+        <button type="button" id="btn-sair-sessao" class="btn-logout" title="Trocar conta ou sala">Sair</button>
+        <span id="hud-connection-dot" class="conn-dot offline" title="Desconectado"></span>
+      </div>
+    </header>
+
+    <div class="game-container">
+      <aside class="character-card">
+        <div class="avatar-box">
+          <img id="char-avatar" src="https://via.placeholder.com/150" alt="Avatar do Personagem" />
+        </div>
+        <h2 id="char-name">Personagem</h2>
+        <p class="char-class" id="char-class">Classe - Nível <span id="char-level">1</span></p>
+
+        <div class="hp-bar-container">
+          <label>Vida (HP): <span id="hp-text">20/20</span></label>
+          <div class="hp-bar"><div id="hp-fill" style="width: 100%;"></div></div>
+        </div>
+
+        <div class="attributes-grid">
+          <div class="attr-box"><span>FOR</span><strong id="attr-for">5</strong></div>
+          <div class="attr-box"><span>DES</span><strong id="attr-des">5</strong></div>
+          <div class="attr-box"><span>INT</span><strong id="attr-int">5</strong></div>
+        </div>
+
+        <h3>Inventário</h3>
+        <ul id="inventory-list" class="inventory-list"></ul>
+      </aside>
+
+      <section class="scene-panel">
+        <div id="scene-image-box" class="scene-image-box hidden">
+          <img id="scene-image" src="" alt="Cenário Atual" />
+          <p id="scene-description"></p>
+        </div>
+        <div id="canvas-container"></div>
+      </section>
+
+      <main class="chat-container">
+        <div id="chat-messages" class="chat-messages"></div>
+
+        <div id="gm-indicator" class="gm-indicator hidden">
+          <span class="spinner"></span> O Mestre (Gemini) está tecendo o destino...
+        </div>
+
+        <div class="chat-controls">
+          <label for="atributo-teste">Teste D20:</label>
+          <select id="atributo-teste">
+            <option value="">Sem teste (Narrativo)</option>
+            <option value="forca">Força (FOR)</option>
+            <option value="destreza">Destreza (DES)</option>
+            <option value="inteligencia">Inteligência (INT)</option>
+          </select>
+        </div>
+
+        <form id="chat-form" class="chat-form">
+          <input type="text" id="chat-input" placeholder="Descreva sua ação ou diálogo..." autocomplete="off" required />
+          <button type="submit">Enviar</button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
